@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude 30-Day Quest</title>
+<style>
+  :root{
+    --bg:#0b0f17; --bg2:#111826; --card:#161f30; --line:#24314a;
+    --text:#e6edf7; --muted:#8a97ad;
+    --w1:#38bdf8; --w2:#a78bfa; --w3:#fb923c; --w4:#34d399;
+    --gold:#fbbf24; --danger:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 20% -10%,#1b2a4a 0%,var(--bg) 60%);color:var(--text);font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif;min-height:100vh}
+  header{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:22px;letter-spacing:.3px}
+  h1 small{color:var(--muted);font-weight:400;font-size:13px;margin-left:10px}
+  .ctrl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  input[type=date]{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  button{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+  button:hover{border-color:#4b5f85}
+  button.primary{background:linear-gradient(135deg,#2563eb,#7c3aed);border:0;font-weight:600}
+  button.danger{color:var(--danger)}
+  main{display:grid;grid-template-columns:320px 1fr;gap:24px;padding:24px 28px;max-width:1500px;margin:0 auto}
+  @media(max-width:950px){main{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .side{display:flex;flex-direction:column;gap:18px}
+  .ring{position:relative;width:200px;height:200px;margin:4px auto}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .c{fill:none;stroke:var(--line);stroke-width:14}
+  .ring .p{fill:none;stroke:url(#grad);stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)}
+  .ring .txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring .big{font-size:40px;font-weight:700;line-height:1}
+  .ring .sub{color:var(--muted);font-size:12px;margin-top:4px}
+  .level{text-align:center;margin-top:10px}
+  .level .name{font-size:18px;font-weight:700;background:linear-gradient(90deg,var(--w1),var(--w2),var(--w3),var(--w4));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .level .next{color:var(--muted);font-size:12px}
+  .xpbar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:8px}
+  .xpbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold),#f97316);transition:width .6s}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .stat{background:var(--bg2);border-radius:12px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:24px}
+  .stat span{color:var(--muted);font-size:12px}
+  .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .badge{aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;text-align:center;border:1px dashed var(--line);color:var(--muted);padding:4px;transition:.3s}
+  .badge .ic{font-size:24px;filter:grayscale(1);opacity:.4}
+  .badge.on{border:1px solid transparent;color:var(--text);box-shadow:0 0 18px -4px var(--bc)}
+  .badge.on .ic{filter:none;opacity:1}
+  .quote{font-style:italic;color:var(--muted);font-size:13px;border-left:3px solid var(--w2);padding-left:10px}
+  h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px}
+  /* map */
+  .map{position:relative;overflow:hidden}
+  .map svg{width:100%;height:auto;display:block}
+  .node{cursor:pointer}
+  .node circle.o{fill:var(--bg2);stroke:var(--line);stroke-width:3;transition:.25s}
+  .node:hover circle.o{stroke:#fff;transform-origin:center}
+  .node.done circle.o{fill:var(--c);stroke:var(--c)}
+  .node.part circle.o{stroke:var(--c);stroke-dasharray:6 4}
+  .node.today circle.o{stroke:var(--gold);stroke-width:4;filter:drop-shadow(0 0 8px var(--gold))}
+  .node text{fill:var(--text);font-size:13px;font-weight:700;text-anchor:middle;dominant-baseline:central;pointer-events:none}
+  .node.done text{fill:#06101f}
+  .node .lbl{fill:var(--muted);font-size:10px;font-weight:500}
+  .wk{fill:var(--muted);font-size:12px;letter-spacing:1.5px;font-weight:600}
+  .path{fill:none;stroke:var(--line);stroke-width:8;stroke-linecap:round}
+  .pathdone{fill:none;stroke:url(#pgrad);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset 1s ease}
+  .flag{font-size:26px}
+  /* drawer */
+  .drawer{position:fixed;top:0;right:-520px;width:min(500px,100vw);height:100vh;background:var(--bg2);border-left:1px solid var(--line);padding:24px;overflow:auto;transition:right .3s;z-index:20;box-shadow:-20px 0 60px rgba(0,0,0,.5)}
+  .drawer.open{right:0}
+  .drawer .tag{display:inline-block;font-size:11px;padding:3px 8px;border-radius:99px;background:var(--c);color:#06101f;font-weight:700;letter-spacing:.5px}
+  .drawer h3{margin:10px 0 4px;font-size:22px}
+  .drawer .theme{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .task{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:10px;background:var(--card);margin-bottom:8px;cursor:pointer;border:1px solid transparent}
+  .task:hover{border-color:var(--line)}
+  .task input{margin-top:4px;accent-color:var(--c);width:16px;height:16px}
+  .task.done span{text-decoration:line-through;color:var(--muted)}
+  .deliv{margin:14px 0;padding:10px 12px;border-radius:10px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.3);font-size:13px}
+  textarea{width:100%;min-height:90px;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px;resize:vertical}
+  .row{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap}
+  .close{position:absolute;top:14px;right:14px}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.3s;z-index:10}
+  .overlay.on{opacity:1;pointer-events:auto}
+  canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#1f2a44;border:1px solid var(--line);padding:12px 18px;border-radius:12px;transition:.4s;z-index:60;font-weight:600}
+  .toast.on{transform:translateX(-50%) translateY(0)}
+  .heat{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+  .heat i{aspect-ratio:1;border-radius:4px;background:var(--line);display:block}
+  .heat i.d{background:var(--w4)} .heat i.p{background:#1f6f5a}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Claude 30-Day Quest <small>AI engineer → agent builder</small></h1>
+  <div class="ctrl">
+    <label>Start date <input type="date" id="start"></label>
+    <button id="sync" title="Cloud sync via private GitHub Gist">☁️ <span id="syncst">Sync off</span></button>
+    <button id="exp">Export</button>
+    <button id="imp">Import</button>
+    <input type="file" id="file" accept="application/json" hidden>
+    <button id="reset" class="danger">Reset</button>
+  </div>
+</header>
+
+<main>
+  <aside class="side">
+    <div class="card">
+      <div class="ring">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <defs><linearGradient id="grad" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".5" stop-color="#a78bfa"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
+          <circle class="c" cx="100" cy="100" r="86"/>
+          <circle class="p" id="prog" cx="100" cy="100" r="86"/>
+        </svg>
+        <div class="txt"><div class="big" id="pct">0%</div><div class="sub" id="tcount">0 / 0 tasks</div></div>
+      </div>
+      <div class="level">
+        <div class="name" id="lvl">Prompt Novice</div>
+        <div class="next" id="lvlnext"></div>
+        <div class="xpbar"><i id="xp"></i></div>
+      </div>
+    </div>
+
+    <div class="card stats">
+      <div class="stat"><b id="days">0</b><span>days completed</span></div>
+      <div class="stat"><b id="streak">0</b><span>🔥 day streak</span></div>
+      <div class="stat"><b id="elapsed">–</b><span>day of 30 (by calendar)</span></div>
+      <div class="stat"><b id="pace">–</b><span>pace</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Badges</h2>
+      <div class="badges" id="badges"></div>
+    </div>
+
+    <div class="card">
+      <h2>Consistency</h2>
+      <div class="heat" id="heat"></div>
+    </div>
+
+    <div class="card"><div class="quote" id="quote"></div></div>
+  </aside>
+
+  <section class="card map">
+    <h2>Your path · click a day</h2>
+    <div id="mapwrap"></div>
+  </section>
+</main>
+
+<footer>Progress is saved in this browser and, with ☁️ Sync on, in your private GitHub Gist so every device stays in step. Export is a manual backup.</footer>
+
+<div class="overlay" id="ov"></div>
+<div class="drawer" id="dr">
+  <button class="close" id="cl">✕</button>
+  <span class="tag" id="dtag"></span>
+  <h3 id="dtitle"></h3>
+  <div class="theme" id="dtheme"></div>
+  <div id="tasks"></div>
+  <div class="deliv" id="ddeliv"></div>
+  <label style="font-size:12px;color:var(--muted)">Notes / what I learned</label>
+  <textarea id="notes" placeholder="One line is enough. What clicked? What broke?"></textarea>
+  <div class="row">
+    <span id="ddate" style="color:var(--muted);font-size:12px"></span>
+    <button class="primary" id="complete">Mark day complete ✓</button>
+  </div>
+</div>
+<div class="drawer" id="sd">
+  <button class="close" id="scl">✕</button>
+  <h3>☁️ Cloud sync</h3>
+  <div class="theme">Progress is saved to a <b>private GitHub Gist</b> so every device sees the same state. Last write wins.</div>
+  <ol style="font-size:13px;color:var(--muted);padding-left:18px;line-height:1.7">
+    <li>Create a token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--w1)">github.com → Settings → Developer settings → Fine-grained tokens</a>. Account permissions → <b>Gists: Read and write</b>. Nothing else.</li>
+    <li>Paste it below. Leave Gist ID empty on the first device; one is created for you. Copy that ID to your other devices.</li>
+  </ol>
+  <label style="font-size:12px;color:var(--muted)">GitHub token</label>
+  <input id="tok" type="password" placeholder="github_pat_…" style="width:100%;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px;margin:4px 0 10px">
+  <label style="font-size:12px;color:var(--muted)">Gist ID (optional on first device)</label>
+  <input id="gid" placeholder="e.g. 3f2a9c…" style="width:100%;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit;font-size:13px;margin:4px 0 10px">
+  <div class="row">
+    <button class="danger" id="sdis">Disconnect</button>
+    <div style="display:flex;gap:8px"><button id="spull">Pull now</button><button class="primary" id="ssave">Connect & sync</button></div>
+  </div>
+  <div id="slog" style="margin-top:14px;font-size:12px;color:var(--muted);white-space:pre-wrap"></div>
+  <div class="theme" style="margin-top:16px">The token is stored only in this browser (localStorage). Don't use this on a shared computer.</div>
+</div>
+<canvas id="fx"></canvas>
+<div class="toast" id="toast"></div>
+
+<script>
+const WEEKS=[
+ {n:1,name:"FOUNDATIONS",c:"var(--w1)",col:"#38bdf8",badge:"🧭",btitle:"API Fluent"},
+ {n:2,name:"AGENTS",c:"var(--w2)",col:"#a78bfa",badge:"🤖",btitle:"Agent Builder"},
+ {n:3,name:"PORTFOLIO",c:"var(--w3)",col:"#fb923c",badge:"🚀",btitle:"Shipped It"},
+ {n:4,name:"EVALS & STORY",c:"var(--w4)",col:"#34d399",badge:"🏆",btitle:"Eval Engineer"},
+];
+const DAYS=[
+ [1,"Setup",["Console account + ANTHROPIC_API_KEY env var","pip install anthropic, hello-world Messages call","Create private repo claude-engineering-sprint","Sign up at Anthropic Academy"],"Repo exists, first API call works"],
+ [2,"Claude Code basics",["Read 'Claude Code best practices'","/init in a real repo, write a solid CLAUDE.md","Use plan mode + @file refs on a real task"],"CLAUDE.md committed"],
+ [3,"Claude Code workflow",["/clear vs /compact, permissions & allowlists","claude -p headless + git worktrees","Add one hook (e.g. tests after edit)","Add one custom slash command / skill"],".claude/ config committed"],
+ [4,"Prompting that matters",["Docs: clear instructions, XML inputs, few-shot","Think-first / extended thinking; long-context placement","Iterate one real prompt 5 times, log each change"],"notes/day4-prompting.md"],
+ [5,"Messages API I",["System prompts, multi-turn, streaming","Stop reasons, max_tokens","Start Academy 'Building with the Claude API'"],"api-playground/ started"],
+ [6,"Messages API II (weekend)",["Structured JSON output + pydantic validation","Vision + PDF input","Token counting, errors, retries, rate limits"],"api-playground/ scripts for each"],
+ [7,"Cost engineering (weekend)",["Prompt caching: measure hits & cost on 50k-token doc","Batch API: 100 requests, compare cost","Extended thinking: when it helps vs wastes","Write COST_NOTES.md with real numbers"],"COST_NOTES.md"],
+ [8,"Agent patterns",["Read 'Building effective agents'","Notes in your own words: workflows vs agents, 5 patterns"],"notes/day8-agents.md"],
+ [9,"Hand-rolled tool loop",["Define 2 tools","Handle tool_use → execute → tool_result","Loop until end_turn"],"agent-core/ v0"],
+ [10,"Extend the loop",["Parallel tool calls","'Final answer' structured tool","Max-iteration guard + per-run cost tracking"],"agent-core/ v1"],
+ [11,"Routing + orchestrator-workers",["Implement routing on a real task","Implement orchestrator-workers","README diagram for agent-core"],"agent-core/ README"],
+ [12,"MCP concepts",["Understand tools / resources / prompts","Connect 2 existing MCP servers to Claude Code","Use them for a real task"],"notes on MCP"],
+ [13,"Write your own MCP server (weekend)",["Pick something real (tracker, vector DB, docs)","Implement server with 2-3 tools","Use it from Claude Code"],"mcp-server-<thing>/"],
+ [14,"Agent SDK + subagents (weekend)",["Rebuild agent on the Claude Agent SDK","Note what you get for free (permissions, context, hooks)","Researcher + reviewer subagent pair in Claude Code"],"SDK-vs-handrolled notes"],
+ [15,"Pick project + spec",["Choose A (RAG research agent) / B (code-review agent) / C (Claude vs vLLM tradeoff agent)","1-page spec: diagram, tools, data, metric, failure modes"],"SPEC.md"],
+ [16,"Skeleton + data/tool layer",["Project skeleton","Data ingestion / tool implementations"],"runs but dumb"],
+ [17,"Core agent loop",["Wire agent loop to real tools","First end-to-end run"],"first real output"],
+ [18,"Production touches",["Streaming","Structured outputs","Retries + cost logging"],"robust run"],
+ [19,"Rough edges",["Run on 5 real inputs","Fix what breaks"],"5/5 inputs OK"],
+ [20,"Ship it (weekend)",["Dockerise or deploy","README: architecture diagram + failure modes"],"Dockerfile + README"],
+ [21,"Buffer (weekend)",["Catch up on anything slipped","If ahead: start the eval set"],"caught up"],
+ [22,"Eval set",["30-50 cases: inputs + expected qualities"],"evals/cases.json"],
+ [23,"Graders",["Programmatic checks","LLM-as-judge with rubric","Judge agreement vs your labels on 20 items"],"evals/ graders"],
+ [24,"Prompt regression",["Change system prompt, measure eval delta","Pick cheapest model that passes"],"regression table"],
+ [25,"Red-team",["Prompt injection via tool results / retrieved docs","Mitigations: validation, allowlisted tools, hierarchy","Document what still fails"],"SECURITY.md"],
+ [26,"Observability",["Log tokens, latency, cost, tool calls per run","One chart","Write EVAL_REPORT.md with before/after"],"EVAL_REPORT.md"],
+ [27,"Polish + certs (weekend)",["Polish READMEs","3-min demo GIF/video","Finish Academy 'Claude Code in Action' cert → LinkedIn"],"demo + cert"],
+ [28,"Write-up (weekend)",["Blog post: 'What I learned building X with Claude'","Draft for LinkedIn / Medium"],"post draft"],
+ [29,"Interview prep",["10 likely questions with crisp answers","2-min system-design walkthrough with diagram"],"interview-prep.md"],
+ [30,"Retrospective",["Reread plan; what would you change?","Set the next-month habit","Celebrate 🎉"],"retro.md"],
+].map(([n,t,tasks,d])=>({n,t,tasks,d,w:Math.min(4,Math.ceil(n/7)), wk: n<=7?1:n<=14?2:n<=21?3:4}));
+
+const LEVELS=[[0,"Prompt Novice"],[10,"API Curious"],[22,"API Fluent"],[38,"Loop Builder"],[52,"Agent Builder"],[66,"Shipper"],[80,"Eval Engineer"],[92,"Claude Power User"],[100,"Claude Master"]];
+const QUOTES=["Consistency beats intensity. One task today is enough.","You don't rise to the level of your goals; you fall to the level of your systems.","Every agent loop you write by hand is an interview answer you own.","Numbers beat adjectives. Measure it.","Ship the ugly version. Polish is Day 20.","A missed day is a data point, not a verdict. Continue.","Interviewers remember the failure-modes section.","Small, daily, done."];
+
+const KEY="claude30";
+let S=load();
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{start:"",done:{},tasks:{},notes:{}}}catch{return{start:"",done:{},tasks:{},notes:{}}}}
+function save(){S.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(S));render();schedulePush()}
+const $=s=>document.querySelector(s);
+const totalTasks=DAYS.reduce((a,d)=>a+d.tasks.length,0);
+const dayTasksDone=d=>(S.tasks[d.n]||[]).filter(Boolean).length;
+const isDone=d=>!!S.done[d.n];
+const todayStr=()=>new Date().toISOString().slice(0,10);
+function calDay(){ if(!S.start)return null; const a=new Date(S.start),b=new Date(todayStr()); return Math.floor((b-a)/864e5)+1; }
+
+/* ---------- map ---------- */
+function buildMap(){
+  const W=1000, rowH=150, perRow=8, rows=Math.ceil(30/perRow), H=rows*rowH+60;
+  const pts=DAYS.map((d,i)=>{const r=Math.floor(i/perRow),c=i%perRow; const x= (r%2? perRow-1-c : c)*(W-120)/(perRow-1)+60; return {x,y:r*rowH+70,d};});
+  let path=`M${pts[0].x},${pts[0].y}`;
+  for(let i=1;i<pts.length;i++){const p=pts[i-1],q=pts[i]; if(p.y===q.y)path+=` L${q.x},${q.y}`; else path+=` C${p.x},${p.y+rowH/2} ${q.x},${q.y-rowH/2} ${q.x},${q.y}`;}
+  const cd=calDay();
+  const nodes=pts.map(({x,y,d})=>{
+    const wk=WEEKS[d.wk-1]; const td=dayTasksDone(d);
+    const cls=["node",isDone(d)?"done":td>0?"part":"",(cd===d.n)?"today":""].join(" ");
+    return `<g class="${cls}" style="--c:${wk.col}" data-n="${d.n}" transform="translate(${x},${y})">
+      <circle class="o" r="24"/><text>${d.n}</text>
+      <text class="lbl" y="42">${d.t.replace(/ \(weekend\)/,"").slice(0,22)}</text>
+      ${d.n%7===0||d.n===30?`<text class="flag" y="-40">${WEEKS[d.wk-1].badge}</text>`:""}
+    </g>`;}).join("");
+  const wkLabels=[0,1,2,3].map(r=>{const p=pts[r*perRow]; const w=WEEKS[r]; return `<text class="wk" x="${r%2?W-60:60}" y="${p.y-45}" text-anchor="${r%2?'end':'start'}" fill="${w.col}">WEEK ${w.n} · ${w.name}</text>`;}).join("");
+  $("#mapwrap").innerHTML=`<svg viewBox="0 0 ${W} ${H}">
+    <defs><linearGradient id="pgrad" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset=".35" stop-color="#a78bfa"/><stop offset=".7" stop-color="#fb923c"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>
+    <path class="path" d="${path}"/><path class="pathdone" id="pd" d="${path}"/>${wkLabels}${nodes}</svg>`;
+  const pd=$("#pd"), L=pd.getTotalLength(); pd.style.strokeDasharray=L;
+  const last=DAYS.filter(isDone).length; // contiguous-ish: light up through highest completed streak from day 1
+  let through=0; for(const d of DAYS){ if(isDone(d)) through=d.n; else break; }
+  pd.style.strokeDashoffset=L*(1-(through-1)/29*(through>0?1:0));
+  if(through===0)pd.style.strokeDashoffset=L;
+  document.querySelectorAll(".node").forEach(n=>n.onclick=()=>openDay(+n.dataset.n));
+}
+
+/* ---------- side ---------- */
+function render(){
+  const done=DAYS.reduce((a,d)=>a+dayTasksDone(d),0);
+  const pct=Math.round(done/totalTasks*100);
+  const r=86,C=2*Math.PI*r; const p=$("#prog"); p.style.strokeDasharray=C; p.style.strokeDashoffset=C*(1-pct/100);
+  $("#pct").textContent=pct+"%"; $("#tcount").textContent=`${done} / ${totalTasks} tasks`;
+  let lvl=LEVELS[0],next=null; for(let i=0;i<LEVELS.length;i++){ if(pct>=LEVELS[i][0]){lvl=LEVELS[i];next=LEVELS[i+1]||null;} }
+  $("#lvl").textContent=lvl[1]; $("#lvlnext").textContent=next?`${next[0]-pct}% to “${next[1]}”`:"Max level. Go get that offer.";
+  $("#xp").style.width=(next?((pct-lvl[0])/(next[0]-lvl[0])*100):100)+"%";
+  const nd=DAYS.filter(isDone).length; $("#days").textContent=nd;
+  $("#streak").textContent=streak();
+  const cd=calDay(); $("#elapsed").textContent=cd?Math.max(1,Math.min(30,cd)):"–";
+  $("#pace").textContent=cd?(nd>=Math.min(30,cd)?"on track ✅":nd>=cd-2?"close 👀":"behind, that's ok"):"set start";
+  $("#badges").innerHTML=WEEKS.map(w=>{const on=DAYS.filter(d=>d.wk===w.n).every(isDone); return `<div class="badge ${on?'on':''}" style="--bc:${w.col};${on?`background:${w.col}22;border-color:${w.col}`:''}"><div class="ic">${w.badge}</div>${w.btitle}</div>`;}).join("");
+  $("#heat").innerHTML=DAYS.map(d=>`<i class="${isDone(d)?'d':dayTasksDone(d)?'p':''}" title="Day ${d.n}"></i>`).join("");
+  $("#quote").textContent="“"+QUOTES[(nd+new Date().getDate())%QUOTES.length]+"”";
+  $("#start").value=S.start||"";
+  buildMap();
+}
+function streak(){
+  const dates=[...new Set(Object.values(S.done))].sort().reverse(); if(!dates.length)return 0;
+  let s=0, cur=new Date(todayStr()); if(dates[0]!==todayStr()){cur.setDate(cur.getDate()-1); if(dates[0]!==cur.toISOString().slice(0,10))return 0;}
+  for(const dt of dates){ if(dt===cur.toISOString().slice(0,10)){s++;cur.setDate(cur.getDate()-1);} else break; }
+  return s;
+}
+
+/* ---------- drawer ---------- */
+let open=null;
+function openDay(n){
+  open=DAYS[n-1]; const w=WEEKS[open.wk-1];
+  $("#dr").style.setProperty("--c",w.col);
+  $("#dtag").textContent=`DAY ${n} · WEEK ${w.n} ${w.name}`; $("#dtitle").textContent=open.t;
+  $("#dtheme").textContent=["Use Claude Code well and know the API surface.","The core skill: build the loop yourself before frameworks.","One production-style agentic system you'll talk about in interviews.","Prove it works, and be able to explain it."][open.wk-1];
+  const st=S.tasks[n]||[];
+  $("#tasks").innerHTML=open.tasks.map((t,i)=>`<label class="task ${st[i]?'done':''}"><input type="checkbox" data-i="${i}" ${st[i]?'checked':''}><span>${t}</span></label>`).join("");
+  $("#tasks").querySelectorAll("input").forEach(cb=>cb.onchange=()=>{const a=S.tasks[n]||open.tasks.map(()=>false);a[cb.dataset.i]=cb.checked;S.tasks[n]=a; if(a.every(Boolean)&&!S.done[n])completeDay(n,false); else save(); openDay(n);});
+  $("#ddeliv").innerHTML=`🎯 <b>Deliverable:</b> ${open.d}`;
+  $("#notes").value=S.notes[n]||""; $("#notes").oninput=()=>{S.notes[n]=$("#notes").value;S.updatedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(S));schedulePush();};
+  $("#ddate").textContent=S.done[n]?`Completed ${S.done[n]}`:"";
+  $("#complete").textContent=S.done[n]?"Un-complete":"Mark day complete ✓";
+  $("#complete").onclick=()=>{ if(S.done[n]){delete S.done[n];save();openDay(n);} else completeDay(n,true); };
+  $("#dr").classList.add("open"); $("#ov").classList.add("on");
+}
+function completeDay(n,fill){
+  if(fill)S.tasks[n]=DAYS[n-1].tasks.map(()=>true);
+  S.done[n]=todayStr(); save(); openDay(n); confetti();
+  const w=WEEKS[DAYS[n-1].wk-1];
+  const weekDone=DAYS.filter(d=>d.wk===w.n).every(isDone);
+  toast(n===30?"🏆 30 days. You did the thing.":weekDone?`${w.badge} Week ${w.n} complete: badge “${w.btitle}” unlocked!`:`Day ${n} done. ${["Nice.","Keep going.","Momentum.","That's the habit.","+1 for consistency."][n%5]}`);
+}
+const closeDr=()=>{$("#dr").classList.remove("open");$("#sd").classList.remove("open");$("#ov").classList.remove("on");};
+$("#cl").onclick=closeDr; $("#ov").onclick=closeDr;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDr();});
+
+/* ---------- controls ---------- */
+$("#start").onchange=e=>{S.start=e.target.value;save();};
+$("#exp").onclick=()=>{const b=new Blob([JSON.stringify(S,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="progress.json";a.click();toast("Exported progress.json");};
+$("#imp").onclick=()=>$("#file").click();
+$("#file").onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{S=JSON.parse(t);save();toast("Imported.");}catch{toast("Invalid file");}});};
+$("#reset").onclick=()=>{if(confirm("Reset ALL progress? Export first if unsure."))
+{S={start:"",done:{},tasks:{},notes:{}};save();}};
+
+/* ---------- cloud sync (private GitHub Gist) ---------- */
+const CKEY="claude30.sync", GFILE="claude30-progress.json";
+let C=(()=>{try{return JSON.parse(localStorage.getItem(CKEY))||{}}catch{return{}}})();
+const saveC=()=>localStorage.setItem(CKEY,JSON.stringify(C));
+const hdr=()=>({Authorization:"Bearer "+C.token,Accept:"application/vnd.github+json","Content-Type":"application/json"});
+const slog=m=>{const e=$("#slog");e.textContent=new Date().toLocaleTimeString()+"  "+m+"\n"+e.textContent.split("\n").slice(0,6).join("\n");};
+function syncStatus(t,ok){$("#syncst").textContent=t;$("#sync").style.borderColor=ok===false?"var(--danger)":ok?"var(--w4)":"";}
+async function gistGet(){
+  const r=await fetch("https://api.github.com/gists/"+C.gist,{headers:hdr(),cache:"no-store"});
+  if(!r.ok)throw new Error("GET "+r.status);
+  const j=await r.json(); const f=j.files[GFILE]; if(!f)return null;
+  const txt=f.truncated?await (await fetch(f.raw_url,{cache:"no-store"})).text():f.content;
+  return JSON.parse(txt);
+}
+async function gistPut(){
+  const body=JSON.stringify({description:"Claude 30-Day Quest progress",public:false,files:{[GFILE]:{content:JSON.stringify(S,null,2)}}});
+  const r=await fetch(C.gist?"https://api.github.com/gists/"+C.gist:"https://api.github.com/gists",{method:C.gist?"PATCH":"POST",headers:hdr(),body});
+  if(!r.ok)throw new Error((C.gist?"PATCH ":"POST ")+r.status);
+  const j=await r.json(); if(!C.gist){C.gist=j.id;saveC();$("#gid").value=j.id;slog("Created gist "+j.id+" — copy this ID to other devices.");}
+}
+let pushT=null;
+function schedulePush(){ if(!C.token)return; syncStatus("Saving…"); clearTimeout(pushT); pushT=setTimeout(push,1500); }
+async function push(){ if(!C.token)return; try{ await gistPut(); syncStatus("Synced "+new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),true); }catch(e){ syncStatus("Sync error",false); slog("Push failed: "+e.message); } }
+async function pull(manual){
+  if(!C.token||!C.gist){ if(manual)slog("Need token and gist ID."); return; }
+  try{ syncStatus("Pulling…"); const remote=await gistGet();
+    if(remote && (remote.updatedAt||0) > (S.updatedAt||0)){ S=remote; localStorage.setItem(KEY,JSON.stringify(S)); render(); slog("Pulled newer progress from cloud."); toast("☁️ Progress pulled from cloud"); }
+    else if(remote){ slog("Local is up to date."); if((S.updatedAt||0)>(remote.updatedAt||0)) await gistPut(); }
+    else { slog("Gist has no progress file yet; pushing local."); await gistPut(); }
+    syncStatus("Synced "+new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),true);
+  }catch(e){ syncStatus("Sync error",false); slog("Pull failed: "+e.message+(e.message.includes("401")?" (bad token?)":e.message.includes("404")?" (bad gist ID?)":"")); }
+}
+$("#sync").onclick=()=>{ $("#tok").value=C.token||""; $("#gid").value=C.gist||""; $("#sd").classList.add("open"); $("#ov").classList.add("on"); };
+$("#scl").onclick=closeDr;
+$("#ssave").onclick=async()=>{ C.token=$("#tok").value.trim(); C.gist=$("#gid").value.trim(); saveC(); if(!C.token){slog("Token required.");return;}
+  if(C.gist) await pull(true); else { try{ await gistPut(); syncStatus("Synced",true);}catch(e){syncStatus("Sync error",false);slog("Create failed: "+e.message);} } };
+$("#spull").onclick=()=>pull(true);
+$("#sdis").onclick=()=>{ C={}; saveC(); syncStatus("Sync off"); slog("Disconnected. Progress stays in this browser."); };
+if(C.token&&C.gist){ pull(false); document.addEventListener("visibilitychange",()=>{ if(!document.hidden) pull(false); }); }
+
+/* ---------- fx ---------- */
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("on"),3000);}
+function confetti(){
+  const c=$("#fx"),x=c.getContext("2d");c.width=innerWidth;c.height=innerHeight;
+  const P=Array.from({length:140},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight/2,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:Math.random()*6+3,col:["#38bdf8","#a78bfa","#fb923c","#34d399","#fbbf24"][Math.random()*5|0],a:Math.random()*6}));
+  let f=0;(function step(){x.clearRect(0,0,c.width,c.height);P.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=.35;p.a+=.1;x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.col;x.fillRect(-p.r/2,-p.r/2,p.r,p.r*.6);x.restore();});if(++f<110)requestAnimationFrame(step);else x.clearRect(0,0,c.width,c.height);})();
+}
+render();
+</script>
+</body>
+</html>
